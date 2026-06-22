@@ -1,0 +1,6 @@
+# Caches
+__pycache__
+.pytest_cache
+
+# venv
+satsys
