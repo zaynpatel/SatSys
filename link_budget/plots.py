@@ -12,8 +12,8 @@ def plot_fspl(elevation_angle_start: int, elevation_angle_stop: int):
     """
     path_losses = []
 
-    satellite = Satellite(altitude=35786)
-    transmitter = Transmitter(frequency=12e9)
+    satellite = Satellite(altitude=658)
+    transmitter = Transmitter(frequency=19e9)
     for angle in range(elevation_angle_stop + 1):
         antenna = Antenna(angle_of_elevation=angle)  # I do not like having to call an instance each time
         tc = TransmitChain(antenna=antenna, transmitter=transmitter, satellite=satellite)

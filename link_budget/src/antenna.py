@@ -5,7 +5,7 @@ import math
 from link_budget import constants, helpers
 
 class Antenna:
-    def __init__(self, gain=None, diameter=None, pointing_error=None, polarization="RHCP", angle_of_elevation=None):
+    def __init__(self, diameter=None, pointing_error=None, polarization="RHCP", angle_of_elevation=5):
         """
         Initializes the antenna object
         
@@ -20,12 +20,11 @@ class Antenna:
         :param angle_of_elevation: Angle of elevation that the antenna sees the satellite above the horizon (in degrees)
         :type angle_of_elevation: float
         """
-        self.gain = gain
         self.diameter = diameter
         self.pointing_error = pointing_error
         self.polarization = polarization
         self.angle_of_elevation = helpers.convert_degrees_to_radians(angle_of_elevation)
-        self.polarization_loss = 0.2
+        self.polarization_loss = 0.0
 
     def calculate_beamwidth(self, frequency: float, ndigits=2):
         """
@@ -64,10 +63,9 @@ class Antenna:
         :type frequency: `Transmitter`
         :param linear: If the output is preferred in decibels or not
         :type linear: bool
-        :return: Max gain in dB for an antenna with circular aperture
+        :return: Max gain in dBi for an antenna with circular aperture
         :rtype: float
         """
-        # I think for the EIRP test to pass you need to make a function for calculate_gain and another for max_gain
         max_gain = efficiency * (((math.pi * self.diameter) / (constants.SPEED_OF_LIGHT / frequency)) ** 2)
         if not linear:
             db_conversion = round(10 * math.log(max_gain, 10), ndigits)

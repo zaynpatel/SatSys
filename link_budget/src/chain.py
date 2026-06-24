@@ -14,7 +14,7 @@ class TransmitChain:
         self.transmitter = transmitter
         self.satellite = satellite
 
-    def raw_rf_power(self, output_metric="dbW"):
+    def raw_transmit_power(self, target_eirp: float, antenna_gain: float, output_metric="dbW"):
         """
         Effective Radiative Isotropic Power (EIRP) is the power output of a transmitter when sending a signal to the receiver.
         To calculate the raw power we need to subtract gain and add feeder loss.
@@ -31,40 +31,46 @@ class TransmitChain:
         :return: Raw rf power
         :rtype: float
         """
-        eirp = self.calculate_eirp()
         if output_metric == "W":
-            return helpers.power_ratio((eirp - self.antenna.gain) + self.transmitter.tx_feeder_loss)
+            return helpers.power_ratio((target_eirp - antenna_gain) + self.transmitter.tx_feeder_loss)
         elif output_metric == "dBm":
-            return 30 + (eirp - self.antenna.gain) + self.transmitter.tx_feeder_loss
-        return (eirp - self.antenna.gain) + self.transmitter.tx_feeder_loss
+            return 30 + (target_eirp - antenna_gain) + self.transmitter.tx_feeder_loss
+        return (target_eirp - antenna_gain) + self.transmitter.tx_feeder_loss
     
-    def calculate_eirp(self):
+    def calculate_eirp(self, ndigits=2):
         """
         Effective Radiative Isotropic Power (EIRP) measures the power that could effectively reach the receiver.
-        
-        :return: EIRP
+
+        Since the raw transmit power is computed using dBm but EIRP is typically reported in dBW, 30 dB is subtracted from
+        the final answer.
+
+        :return: EIRP in dBW
         :rtype: float
         """
-        raw_transmit_power = 52.2
-        transmitter_gain = self.antenna.calculate_gain(self.transmitter.efficiency, self.transmitter.frequency, linear=True)
+        antenna_gain = self.antenna.calculate_gain(self.transmitter.efficiency, self.transmitter.frequency)
+        raw_transmit_power = self.raw_transmit_power(target_eirp=5, antenna_gain=antenna_gain, output_metric="dBm")
         pointing_loss = self.antenna.calculate_pointing_loss(self.transmitter.frequency)
-        return raw_transmit_power + transmitter_gain - pointing_loss - self.antenna.polarization_loss - self.transmitter.tx_feeder_loss
-    
+        return round((raw_transmit_power + antenna_gain - pointing_loss - self.antenna.polarization_loss - self.transmitter.tx_feeder_loss)  - 30, ndigits)
+
     def calculate_path_loss(self, R):
         """
-        Docstring for calculate_path_loss
-        
-        :param self: Description
+        Calculates free space path loss (FSPL).
+
+        The symbolic formula for path loss, in dB, is: 20 * log_10 (4πR / λ) where 4π is the steradians of a sphere, R is the distance between
+        ground station and satellite, and λ is wavelength.
+
+        :param R: Distance between ground station and satellite
+        :type R: float
+        :return: FSPL in dB
+        :rtype: float
         """
         wavelength = constants.SPEED_OF_LIGHT / self.transmitter.frequency
         return round(20 * (math.log((4 * math.pi * R * 1000) / wavelength, 10)), 2)
 
-    def calculate_path_length(self, ndigits=2):
+    def calculate_path_length(self, ndigits=2) -> float:
         """
-        Docstring for calculate_path_length
-        
-        :param self: Description
+        Calculates the line-of-sight path length between a ground station and a satellite.
         """
         side_length_calculations = (constants.RADIUS_OF_EARTH ** 2) + ((constants.RADIUS_OF_EARTH + self.satellite.altitude) ** 2)
         sin_calculation = math.sin(self.antenna.angle_of_elevation + math.asin((constants.RADIUS_OF_EARTH / (constants.RADIUS_OF_EARTH + self.satellite.altitude)) * math.cos(self.antenna.angle_of_elevation)))
-        return round(math.sqrt(side_length_calculations - 2 * constants.RADIUS_OF_EARTH * (constants.RADIUS_OF_EARTH + self.satellite.altitude) * sin_calculation), ndigits)
+        return round(math.sqrt(side_length_calculations - (2 * constants.RADIUS_OF_EARTH * (constants.RADIUS_OF_EARTH + self.satellite.altitude) * sin_calculation)), ndigits)
