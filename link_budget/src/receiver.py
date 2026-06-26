@@ -1,11 +1,11 @@
-"""transmitter
+"""receiver
 """
 from link_budget.src.radio import Radio
 
-class Transmitter(Radio):
+class Receiver(Radio):
     def __init__(self, feeder_loss: float, efficiency: float, frequency: float, noise_figure: float):
         """
-        Initializes the transmitter object (radio and other electronics that connect to the antenna).
+        Initializes the receiver object (radio and other electronics that connect to the antenna).
 
         :param feeder_loss: Loss that occurs on the feed line to the transmitter
         :type feeder_loss: float
@@ -16,4 +16,4 @@ class Transmitter(Radio):
         :param noise_figure: Ratio of the total available power at the output to the noise of an ideal receiver
         :type noise_figure: float
         """
-        super().__init__(feeder_loss, efficiency, frequency, noise_figure)
+        super().init__(feeder_loss, efficiency, frequency, noise_figure)
